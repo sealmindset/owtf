@@ -42,7 +42,7 @@ verify_dependencies(os.path.dirname(os.path.abspath(sys.argv[0])) or '.')
 
 
 import argparse
-from framework import core
+from framework import core as core_mod
 from framework.lib.general import *
 from framework import update
 
@@ -188,6 +188,7 @@ def get_args(core, args):
     parser.add_argument('Targets', nargs='*', help='List of Targets')
     return parser.parse_args(args)
 
+
 def get_args_for_update(args):
     parser = argparse.ArgumentParser(
         description="OWASP OWTF, the Offensive (Web) Testing Framework, is " \
@@ -213,6 +214,7 @@ def get_args_for_update(args):
         action="store_true",
         help="Use this flag to update OWTF")
     return parser.parse_args(args)
+
 
 def usage(error_message):
     """Display the usage message describing how to use owtf."""
@@ -413,7 +415,6 @@ def process_options(core, user_args):
             except ValueError:
                 usage("Invalid port for Inbound Proxy")
 
-
     plugin_types_for_group = core.DB.Plugin.GetTypesForGroup(plugin_group)
     if arg.PluginType == 'all':
         arg.PluginType = plugin_types_for_group
@@ -495,15 +496,16 @@ def run_owtf(core, args):
     finally:  # Needed to rename the temp storage dirs to avoid confusion.
         core.clean_temp_storage_dirs()
 
-if __name__ == "__main__":
+
+def main(args):
     banner()
 
     # Get tool path from script path:
-    root_dir = os.path.dirname(os.path.abspath(sys.argv[0])) or '.'
+    root_dir = os.path.dirname(os.path.abspath(args[0])) or '.'
     owtf_pid = os.getpid()
     if not "--update" in sys.argv[1:]:
         profiles = get_custom_profiles(sys.argv[1:])
-        core = core.Core(root_dir, owtf_pid, profiles)  # Initialise Framework.
+        core = core_mod.Core(root_dir, owtf_pid, profiles)  # Initialise Framework.
         logging.warn(
             "OWTF Version: %s, Release: %s " % (
                 core.Config.FrameworkConfigGet('VERSION'),
@@ -515,7 +517,7 @@ if __name__ == "__main__":
         # First confirming that --update flag is present in args and then
         # creating a different parser for parsing the args.
         try:
-            arg = get_args_for_update(sys.argv[1:])
+            arg = get_args_for_update(args[1:])
         except Exception as e:
             usage("Invalid OWTF option(s) " + e)
         # Updater class is imported
@@ -530,3 +532,7 @@ if __name__ == "__main__":
                 updater.set_proxy(arg.OutboundProxy)
         # Update method called to perform update.
         updater.update()
+
+
+if __name__ == "__main__":
+    main(sys.argv)
