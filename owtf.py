@@ -308,7 +308,7 @@ def get_plugins_from_arg(core, arg):
 
 def get_custom_profiles(user_args):
     profiles = {}
-    if "-m" in sys.argv[1:] or "--custom_profile" in sys.argv[1:]:
+    if "-m" in user_args[1:] or "--custom_profile" in user_args[1:]:
         parser = argparse.ArgumentParser()
         parser.add_argument(
             "-m", "--custom_profile",
@@ -503,15 +503,15 @@ def main(args):
     # Get tool path from script path:
     root_dir = os.path.dirname(os.path.abspath(args[0])) or '.'
     owtf_pid = os.getpid()
-    if not "--update" in sys.argv[1:]:
-        profiles = get_custom_profiles(sys.argv[1:])
+    if not "--update" in args[1:]:
+        profiles = get_custom_profiles(args[1:])
         core = core_mod.Core(root_dir, owtf_pid, profiles)  # Initialise Framework.
         logging.warn(
             "OWTF Version: %s, Release: %s " % (
                 core.Config.FrameworkConfigGet('VERSION'),
                 core.Config.FrameworkConfigGet('RELEASE'))
             )
-        args = process_options(core, sys.argv[1:])
+        args = process_options(core, args[1:])
         run_owtf(core, args)
     else:
         # First confirming that --update flag is present in args and then
