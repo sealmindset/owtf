@@ -57,7 +57,7 @@ from framework.http.proxy.outbound_proxyminer import Proxy_Miner
 from framework.plugin import plugin_handler, plugin_helper, \
     plugin_params, worker_manager
 from framework.protocols import smtp, smb
-from framework.interface import reporter, server
+from framework.interface import reporter, server, cli
 from framework import zest, zap
 from framework.lib.formatters import ConsoleFormatter, FileFormatter
 from framework.selenium import selenium_handler
@@ -338,7 +338,10 @@ class Core(object):
 
     def Start(self, options):
         if self.initialise_framework(options):
-            return self.run_server(disable_console_logging=not options["QuitOnCompletion"])
+            if not options['nowebui']:
+                return self.run_server(disable_console_logging=not options["QuitOnCompletion"])
+            else:
+                return self.run_cli()
 
     def initialise_framework(self, options):
         self.ProxyMode = options["ProxyMode"]
@@ -364,7 +367,7 @@ class Core(object):
         # The order is important here ;)
         self.PluginHandler = plugin_handler.PluginHandler(self, options)
         self.PluginParams = plugin_params.PluginParams(self, options)
-        self.WorkerManager = worker_manager.WorkerManager(self)
+        self.WorkerManager = worker_manager.WorkerManager(self, keep_working=not options['nowebui'])
 
     def run_server(self, disable_console_logging=True):
         """This method starts the interface server."""
@@ -378,6 +381,11 @@ class Core(object):
         if disable_console_logging:
             self.disable_console_logging()
         self.InterfaceServer.start()
+
+    def run_cli(self):
+        """This method starts the CLI server."""
+        self.cli_server = cli.CliServer(self)
+        self.cli_server.start()
 
     def ReportErrorsToGithub(self):
         cprint("Do you want to add any extra info to the bug report? [Press Enter to skip]")
@@ -423,7 +431,7 @@ class Core(object):
             logging.info("Stopping file server process and cleaning up. Please wait!")
             self.KillChildProcesses(self.FileServer.pid)
             self.FileServer.terminate()
-        if getattr(self, "InterfaceServer", None) is not None:
+        if getattr(self, "InterfaceServer", None) is not None or getattr(self, 'cli_server', None) is not None:
             # Stop any tornado loops
             logging.info("Stopping tornado loops in the current process, so interface server stops")
             tornado.ioloop.IOLoop.instance().stop()
