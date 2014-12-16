@@ -64,6 +64,7 @@ WEB Plugin Types:
 class PluginHandler:
     def __init__(self, CoreObj, Options):
         self.Core = CoreObj
+        self.plugin_count = 0
         #This should be dynamic from filesystem:
         #self.PluginGroups = [ 'web', 'net', 'aux' ]
         #self.PluginTypes = [ 'passive', 'semi_passive', 'active', 'grep' ]
@@ -230,11 +231,14 @@ class PluginHandler:
             self.Core.Config.GetOutputDirForTargets())
         status['AllSkipped'] = False  # A plugin is going to be run.
         plugin['status'] = 'Running'
+        self.plugin_count += 1
         logging.info(
-            '_' * 10 + ' ' +
-            ' - Target: ' + self.Core.DB.Target.GetTargetURL() +
-            ' -> Plugin: ' + plugin['title'] + ' (' +
-            plugin['type'] + ') ' + '_' * 10)
+            '_' * 10 + ' %d - Target: %s -> Plugin: %s (%s/%s) ' + '_' * 10,
+            self.plugin_count,
+            self.Core.DB.Target.GetTargetURL(),
+            plugin['title'],
+            plugin['group'],
+            plugin['type'])
         # Skip processing in simulation mode, but show until line above
         # to illustrate what will run
         if self.Simulation:
