@@ -398,7 +398,7 @@ class Core(object):
 
         # No processing required, just list available modules.
         if options['list_plugins']:
-            self.PluginHandler.ShowPluginList(options['list_plugins'])
+            self.PluginHandler.show_plugin_list(options['list_plugins'])
             self.finish()
             return False
         self.Config.ProcessOptions(options)
