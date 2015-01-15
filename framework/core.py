@@ -397,8 +397,8 @@ class Core(object):
         # self.initlogger()
 
         # No processing required, just list available modules.
-        if options['ListPlugins']:
-            self.PluginHandler.ShowPluginList()
+        if options['list_plugins']:
+            self.PluginHandler.ShowPluginList(options['list_plugins'])
             self.finish()
             return False
         self.Config.ProcessOptions(options)

@@ -70,7 +70,7 @@ class PluginHandler:
         #self.PluginTypes = [ 'passive', 'semi_passive', 'active', 'grep' ]
         #self.AllowedPluginTypes = self.GetAllowedPluginTypes(Options['PluginType'].split(','))
         #self.Simulation, self.Scope, self.PluginGroup, self.Algorithm, self.ListPlugins = [ Options['Simulation'], Options['Scope'], Options['PluginGroup'], Options['Algorithm'], Options['ListPlugins'] ]
-        self.Simulation, self.Scope, self.PluginGroup, self.ListPlugins = [ Options['Simulation'], Options['Scope'], Options['PluginGroup'], Options['ListPlugins'] ]
+        self.Simulation, self.Scope, self.PluginGroup = [ Options['Simulation'], Options['Scope'], Options['PluginGroup'] ]
         self.scanner = Scanner(self.Core)
         self.showOutput = True
 
@@ -393,14 +393,14 @@ class PluginHandler:
         self.Core.DB.SaveDBs() # Save new URLs to DB after each request
         self.Core.Reporter.SavePluginReport(PluginOutput, Plugin) # Timer retrieved by Reporter
 
-    def ShowPluginList(self):
-        if self.ListPlugins == 'web':
+    def ShowPluginList(self, group):
+        if group == 'web':
             self.ShowWebPluginsBanner()
-        elif self.ListPlugins == 'aux':
+        elif group == 'aux':
             self.ShowAuxPluginsBanner()
-        elif self.ListPlugins == 'net':
+        elif group == 'net':
             self.ShowNetPluginsBanner()
-        self.ShowPluginGroupPlugins(self.ListPlugins)
+        self.ShowPluginGroupPlugins(group)
 
     def ShowNetPluginsBanner(self):
         logging.info("\nAvailable NET plugins")
@@ -411,15 +411,15 @@ class PluginHandler:
     def ShowWebPluginsBanner(self):
         logging.info(INTRO_BANNER_GENERAL+INTRO_BANNER_WEB_PLUGIN_TYPE+"\n Available WEB plugins:""")
 
-    def ShowPluginGroupPlugins(self, PluginGroup):
-        for PluginType in self.Core.Config.Plugin.GetTypesForGroup(PluginGroup):
-            self.ShowPluginTypePlugins(PluginType,PluginGroup)
+    def ShowPluginGroupPlugins(self, group):
+        for PluginType in self.Core.Config.Plugin.GetTypesForGroup(group):
+            self.ShowPluginTypePlugins(PluginType, group)
 
-    def ShowPluginTypePlugins(self, PluginType,PluginGroup):
-        logging.info("\n"+'*' * 40+" "+PluginType.title().replace('_', '-')+" plugins "+'*' * 40)
+    def ShowPluginTypePlugins(self, PluginType, PluginGroup):
+        logging.info("\n" + '*' * 40 + " " + PluginType.title().replace('_', '-') + " plugins " + '*' * 40)
         for Plugin in self.Core.Config.Plugin.GetAll(PluginGroup, PluginType):
-            #'Name' : PluginName, 'Code': PluginCode, 'File' : PluginFile, 'Descrip' : PluginDescrip } )
-            LineStart = " "+Plugin['type']+": "+Plugin['name']
+            # 'Name' : PluginName, 'Code': PluginCode, 'File' : PluginFile, 'Descrip' : PluginDescrip } )
+            LineStart = " " + Plugin['type'] + ": " + Plugin['name']
             Pad1 = "_" * (60 - len(LineStart))
             Pad2 = "_" * (20- len(Plugin['code']))
             logging.info(LineStart+Pad1+"("+Plugin['code']+")"+Pad2+Plugin['descrip'])
