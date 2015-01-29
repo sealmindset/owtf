@@ -83,7 +83,9 @@ class PluginHandler:
         :rtype: list
 
         """
-        plugin_codes = plugin_codes or [] # Ensure there is always a list to iterate from! :)
+        # Ensure there is always a list to iterate from! :)
+        if not plugin_codes:
+            return []
         valid_plugin_codes = []
         for code in plugin_codes:
             found = False
