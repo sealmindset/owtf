@@ -77,6 +77,13 @@ def get_args(core, args):
         choices=valid_plugin_groups,
         help="List available plugins in the plugin group (web, net or aux)")
     parser.add_argument(
+        "-m", "--custom_profile",
+        dest="CustomProfile",
+        default=None,
+        help="<g:f,w:f,n:f,r:f,m:f> - Use my profile: 'f' = valid config file. " \
+             "g: general config, w: web plugin order, n: net plugin order, " \
+             "r: resources file, m: mappings file")
+    parser.add_argument(
         "-f", "--force",
         dest="ForceOverwrite",
         action='store_true',
@@ -132,13 +139,6 @@ def get_args(core, args):
         dest="Simulation",
         action='store_true',
         help="Do not do anything, simply simulate how plugins would run")
-    parser.add_argument(
-        "-m", "--custom_profile",
-        dest="CustomProfile",
-        default=None,
-        help="<g:f,w:f,n:f,r:f> - Use my profile: 'f' = valid config file. " \
-             "g: general config, w: web plugin order, n: net plugin order, " \
-             "r: resources file")
     parser.add_argument(
         "-g", "--plugin_group",
         dest="PluginGroup",
@@ -306,16 +306,18 @@ def get_plugins_from_arg(core, arg):
     validate_one_plugin_group(plugin_groups)
     return [plugins, plugin_groups]
 
-
-def process_options(core, user_args):
-    try:
-        arg = get_args(core, user_args)
-    except KeyboardInterrupt: #Exception as e:
-        usage("Invalid OWTF option(s) " + e)
-
+def get_custom_profiles(user_args):
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-m", "--custom_profile",
+        dest="CustomProfile",
+        default=None,
+        help="<g:f,w:f,n:f,r:f,m:f> - Use my profile: 'f' = valid config file. " \
+             "g: general config, w: web plugin order, n: net plugin order, " \
+             "r: resources file, m: mappings file")
+    arg, unknown = parser.parse_known_args(user_args)
     # Default settings:
-    profiles = []
-    plugin_group = arg.PluginGroup
+    profiles = {}
     if arg.CustomProfile:  # Custom profiles specified
         # Quick pseudo-validation check
         for profile in arg.CustomProfile.split(','):
@@ -323,7 +325,17 @@ def process_options(core, user_args):
             if len(chunks) != 2 or not os.path.exists(chunks[1]):
                 usage("Invalid Profile")
             else:  # profile "ok" :)
-                profiles.append(chunks)
+                profiles[chunks[0]] = chunks[1]
+    return(profiles)
+
+
+def process_options(core, user_args):
+    try:
+        arg = get_args(core, user_args)
+    except KeyboardInterrupt: #Exception as e:
+        usage("Invalid OWTF option(s) " + e)
+
+    plugin_group = arg.PluginGroup
 
     if arg.OnlyPlugins:
         arg.OnlyPlugins, plugin_groups = get_plugins_from_arg(
@@ -462,7 +474,6 @@ def process_options(core, user_args):
         'InboundProxy': arg.InboundProxy,
         'OutboundProxy': arg.OutboundProxy,
         'OutboundProxyAuth': arg.OutboundProxyAuth,
-        'Profiles': profiles,
         'PluginGroup': plugin_group,
         'RPort': arg.RPort,
         'PortWaves' : arg.PortWaves,
@@ -496,7 +507,8 @@ if __name__ == "__main__":
     root_dir = os.path.dirname(os.path.abspath(sys.argv[0])) or '.'
     owtf_pid = os.getpid()
     if not "--update" in sys.argv[1:]:
-        core = core.Init(root_dir, owtf_pid)  # Initialise Framework.
+        profiles = get_custom_profiles(sys.argv[1:])
+        core = core.Core(root_dir, owtf_pid, profiles)  # Initialise Framework.
         logging.warn(
             "OWTF Version: %s, Release: %s " % (
                 core.Config.FrameworkConfigGet('VERSION'),

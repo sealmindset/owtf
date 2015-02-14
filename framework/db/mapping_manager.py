@@ -14,7 +14,7 @@ class MappingDB(object):
         """
         self.Core = Core
         self.mapping_types = []
-        self.LoadMappingDBFromFile(self.Core.Config.FrameworkConfigGet("DEFAULT_MAPPING_PROFILE"))
+        self.LoadMappingDBFromFile(self.Core.Config.get_profile_path("MAPPING_PROFILE"))
 
     def LoadMappingDBFromFile(self, file_path):
         """

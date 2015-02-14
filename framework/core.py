@@ -70,7 +70,7 @@ class Core(object):
     """
     The glue which holds everything together
     """
-    def __init__(self, root_dir, owtf_pid):
+    def __init__(self, root_dir, owtf_pid, profiles):
         """
         [*] Tightly coupled, cohesive framework components
         [*] Order is important
@@ -89,7 +89,7 @@ class Core(object):
 
         # ------------------------ Error & Config ------------------------ #
         self.Error = error_handler.ErrorHandler(self)
-        self.Config = config.Config(root_dir, owtf_pid, self)
+        self.Config = config.Config(root_dir, owtf_pid, profiles, self)
 
         # ----------------------- Directory creation ----------------------- #
         self.create_dirs()
@@ -524,7 +524,3 @@ class Core(object):
         self.makedirs = catch_error(os.makedirs)
         self.rmtree = catch_error(shutil.rmtree)
         self.FileHandler = catch_error(logging.FileHandler)
-
-
-def Init(root_dir, owtf_pid):
-    return Core(root_dir, owtf_pid)

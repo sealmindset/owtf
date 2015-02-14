@@ -8,7 +8,7 @@ import logging
 class ResourceDB(object):
     def __init__(self, Core):
         self.Core = Core
-        self.LoadResourceDBFromFile(self.Core.Config.FrameworkConfigGet("DEFAULT_RESOURCES_PROFILE"))
+        self.LoadResourceDBFromFile(self.Core.Config.get_profile_path("RESOURCES_PROFILE"))
 
     def LoadResourceDBFromFile(self, file_path): # This needs to be a list instead of a dictionary to preserve order in python < 2.7
         logging.info("Loading Resources from: " + file_path + " ..")

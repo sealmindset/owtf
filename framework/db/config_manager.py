@@ -8,7 +8,7 @@ import logging
 class ConfigDB(object):
     def __init__(self, Core):
         self.Core = Core
-        self.LoadConfigDBFromFile(self.Core.Config.FrameworkConfigGet('DEFAULT_GENERAL_PROFILE'))
+        self.LoadConfigDBFromFile(self.Core.Config.get_profile_path('GENERAL_PROFILE'))
 
     def IsConvertable(self, value, conv):
         try:
