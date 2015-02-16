@@ -41,6 +41,7 @@ import shutil
 import codecs
 import signal
 import socket
+import tornado
 import logging
 import multiprocessing
 import subprocess
@@ -473,7 +474,9 @@ class Core(object):
                     self.TransactionLogger.join()
                 except:  # It means the proxy was not started.
                     pass
-            exit()
+            # Stop any tornado loops
+            tornado.ioloop.IOLoop.instance().stop()
+            exit(0)
 
     def IsIPInternal(self, IP):
         return len(self.IsIPInternalRegexp.findall(IP)) == 1

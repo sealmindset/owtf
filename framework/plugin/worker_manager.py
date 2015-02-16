@@ -32,6 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.  Manager Process
 import os
 import sys
 import time
+import Queue
 import signal
 import subprocess
 import logging
@@ -48,7 +49,7 @@ class Worker(OWTFProcess):
         self.output_q.put('Started')
         while self.poison_q.empty():
             try:
-                work = self.input_q.get()
+                work = self.input_q.get(True, 2)
                 # If work is empty this means no work is there
                 if work == ():
                     exit(0)
@@ -58,12 +59,14 @@ class Worker(OWTFProcess):
                 self.core.PluginHandler.SwitchToTarget(target["id"])
                 self.core.PluginHandler.ProcessPlugin(pluginDir, plugin)
                 self.output_q.put('done')
+            except Queue.Empty:
+                pass
             except KeyboardInterrupt:
                 logging.debug(
                     "I am worker (%d) & my master doesn't need me anymore",
                     self.pid)
                 exit(0)
-            except Exception, e:
+            except Exception as e:
                 self.core.Error.LogError(
                     "Exception occured while running :",
                     trace=str(e))

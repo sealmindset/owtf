@@ -36,6 +36,7 @@ repository to get info.
 import os
 import re
 import socket
+import logging
 
 from urlparse import urlparse
 from collections import defaultdict
@@ -44,7 +45,6 @@ from framework.lib.exceptions import PluginAbortException, \
                                      DBIntegrityException, \
                                      UnresolvableTargetException
 from framework.config import health_check
-from framework.lib.general import cprint
 from framework.db import models, target_manager
 
 
@@ -84,7 +84,7 @@ class Config(object):
     def LoadFrameworkConfigFromFile(self, config_path):
         """Load the configuration from into a global dictionary."""
         if 'framework_config' not in config_path:
-            cprint("Loading Config from: " + config_path + " ..")
+            logging.info("Loading Config from: " + config_path + " ..")
         config_file = self.Core.open(config_path, 'r')
         self.Set('FRAMEWORK_DIR', self.RootDir)  # Needed Later.
         for line in config_file:
@@ -157,35 +157,36 @@ class Config(object):
             self.FrameworkConfigGet("DEFAULT_MAPPING_PROFILE")
 
     def LoadTargets(self, options):
-        scope = self.PrepareURLScope(options['Scope'], options['PluginGroup'])
+        scope = self.prepare_url_scope(options['Scope'], options['PluginGroup'])
         added_targets = []
         for target in scope:
             try:
                 self.Core.DB.Target.AddTarget(target)
                 added_targets.append(target)
             except DBIntegrityException:
-                cprint(target + " already exists in DB")
+                logging.warning(target + " already exists in DB")
             except UnresolvableTargetException as e:
-                cprint(e.parameter)
+                logging.error(e.parameter)
         return(added_targets)
 
-    def PrepareURLScope(self, scope, group):
+    def prepare_url_scope(self, scope, group):
         """Convert all targets to URLs."""
         new_scope = []
-        for target_URL in scope:
-            if target_URL[-1] == "/":
-                target_URL = target_URL[0:-1]
-            if target_URL[0:4] != 'http':
+        for target_url in scope:
+            if target_url.endswith("/"):
+                target_url = target_url[:-1]
+            if not target_url.startswith("http"):
                 # Add both "http" and "https" if not present:
                 # The connection check will then remove from the report if one
                 # does not exist.
-                if group == "net":
-                    new_scope.append('http://' + target_URL)
+                if group is "net":
+                    new_scope.append('http://' + target_url)
                 else:
-                    for prefix in ['http', 'https']:
-                        new_scope.append(prefix + '://' + target_URL)
+                    new_scope.extend((
+                            '%s://%s' % (prefix, target_url)
+                            for prefix in ('http', 'https')))
             else:
-                new_scope.append(target_URL)  # Append "as-is".
+                new_scope.append(target_url)  # Append "as-is".
         return new_scope
 
     def MultipleReplace(self, text, replace_dict):
@@ -359,20 +360,20 @@ class Config(object):
                 ip = socket.gethostbyname(hostname)
             except socket.gaierror:
                 raise UnresolvableTargetException(
-                    "Unable to resolve : " + hostname);
+                    "Unable to resolve : '%s'" % (hostname));
 
         ipchunks = ip.strip().split("\n")
         alternative_IPs = []
         if len(ipchunks) > 1:
             ip = ipchunks[0]
-            cprint(
+            logging.info(
                 hostname + " has several IP addresses: (" +
                 ", ".join(ipchunks)[0:-3] + "). Choosing first: " + ip + "")
             alternative_IPs = ipchunks[1:]
         self.Set('alternative_ips', alternative_IPs)
         ip = ip.strip()
         self.Set('INTERNAL_IP', self.Core.IsIPInternal(ip))
-        cprint("The IP address for " + hostname + " is: '" + ip + "'")
+        logging.info("The IP address for " + hostname + " is: '" + ip + "'")
         return ip
 
     def GetIPsFromHostname(self, hostname):
@@ -504,9 +505,9 @@ class Config(object):
         return self.Config
 
     def Show(self):
-        cprint("Configuration settings")
+        logging.info("Configuration settings")
         for k, v in self.GetConfig().items():
-            cprint(str(k) + " => " + str(v))
+            logging.info(str(k) + " => " + str(v))
 
     def GetOutputDir(self):
         return os.path.expanduser(self.FrameworkConfigGet("OUTPUT_PATH"))
