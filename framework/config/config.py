@@ -38,6 +38,7 @@ import re
 import socket
 import logging
 
+from copy import deepcopy
 from urlparse import urlparse
 from collections import defaultdict
 
@@ -107,6 +108,13 @@ class Config(object):
         return (not(string in ['False', 'false', 0, '0']))
 
     def ProcessOptions(self, options):
+        """Process the options from the CLI.
+
+        :param dict options: Options coming from the CLI.
+
+        """
+        # Backup the raw CLI options in case they are needed later.
+        self.cli_options = deepcopy(options)
         self.QuitOnCompletion = options["QuitOnCompletion"]
         target_urls = self.LoadTargets(options)
         self.LoadWork(options, target_urls)
@@ -125,6 +133,8 @@ class Config(object):
                 }
             else:
                 filter_data = {"code": options["OnlyPlugins"]}
+                if options.get("type", None):
+                    filter_data["type"] = options["type"]
             plugins = self.Core.DB.Plugin.GetAll(filter_data)
             force_overwrite = options["Force_Overwrite"]
             self.Core.DB.Worklist.add_work(
