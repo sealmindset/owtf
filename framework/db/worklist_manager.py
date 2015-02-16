@@ -139,27 +139,29 @@ class WorklistManager(object):
     def add_work(self, target_list, plugin_list, force_overwrite=False):
         for target in target_list:
             for plugin in plugin_list:
-                # Check if it already in worklist
-                if self.Core.DB.session.query(models.Work).filter_by(
-                        target_id=target["id"],
-                        plugin_key=plugin["key"]).count() == 0:
-                    # Check if it is already run ;) before adding
-                    if ((force_overwrite is True) or
-                        (force_overwrite is False and
-                            self.Core.DB.POutput.PluginAlreadyRun(
-                                plugin, target_id=target["id"]) is False)):
-                        # If force overwrite is true then plugin output has
-                        # to be deleted first
-                        if force_overwrite is True:
-                            self.Core.DB.POutput.DeleteAll({
-                                "target_id": target["id"],
-                                "plugin_key": plugin["key"]
-                            })
-                        work_model = models.Work(
+                # Check if the plugin can be run, even if added to worklist
+                if self.Core.PluginHandler.can_plugin_run(plugin):
+                    # Check if it already in worklist
+                    if self.Core.DB.session.query(models.Work).filter_by(
                             target_id=target["id"],
-                            plugin_key=plugin["key"])
-                        self.Core.DB.session.add(
-                            work_model)
+                            plugin_key=plugin["key"]).count() == 0:
+                        # Check if it is already run ;) before adding
+                        if ((force_overwrite is True) or
+                            (force_overwrite is False and
+                                self.Core.DB.POutput.PluginAlreadyRun(
+                                    plugin, target_id=target["id"]) is False)):
+                            # If force overwrite is true then plugin output has
+                            # to be deleted first
+                            if force_overwrite is True:
+                                self.Core.DB.POutput.DeleteAll({
+                                    "target_id": target["id"],
+                                    "plugin_key": plugin["key"]
+                                })
+                            work_model = models.Work(
+                                target_id=target["id"],
+                                plugin_key=plugin["key"])
+                            self.Core.DB.session.add(
+                                work_model)
         self.Core.DB.session.commit()
 
     def remove_work(self, work_id):

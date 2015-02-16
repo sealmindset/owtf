@@ -73,8 +73,6 @@ WEB Plugin Types:
 """
 
 class PluginHandler:
-        PluginCount = 0
-
         def __init__(self, CoreObj, Options):
                 self.Core = CoreObj
                 #This should be dynamic from filesystem:
@@ -94,7 +92,6 @@ class PluginHandler:
                 self.OnlyPluginsSet = len(self.OnlyPluginsList) > 0
                 self.ExceptPluginsSet = len(self.ExceptPluginsList) > 0
                 self.scanner = Scanner(self.Core)
-                self.InitExecutionRegistry()
                 self.showOutput = True
 
         def ValidateAndFormatPluginList(self, PluginList):
@@ -116,37 +113,8 @@ class PluginHandler:
                                 exit()
                 return ValidatedList # Return list of Codes
 
-        def InitExecutionRegistry(self): # Initialises the Execution registry: As plugins execute they will be tracked here, useful to avoid calling plugins stupidly :)
-                self.ExecutionRegistry = defaultdict(list)
-                for Target in self.Scope:
-                        self.ExecutionRegistry[Target] = []
-
-        def GetLastPluginExecution(self, Plugin):
-                ExecLog = self.ExecutionRegistry[self.Core.Config.GetTarget()] # Get shorcut to relevant execution log for this target for readability below :)
-                NumItems = len(ExecLog)
-                #print "NumItems="+str(NumItems)
-                if NumItems == 0:
-                        return -1 # List is empty
-                #print "NumItems="+str(NumItems)
-                #print str(ExecLog)
-                #print str(range((NumItems -1), 0))
-                for Index in range((NumItems -1), -1, -1):
-                        #print "Index="+str(Index)
-                        #print str(ExecLog[Index])
-                        Match = True
-                        for Key, Value in ExecLog[Index].items(): # Compare all execution log values against the passed Plugin, if all match, return index to log record
-                                if not Key in Plugin or Plugin[Key] != Value:
-                                        Match = False
-                        if Match:
-                                #print str(PluginIprint "you have etered " + cnfo)+" was found!"
-                                return Index
-                return -1
-
         def PluginAlreadyRun(self, PluginInfo):
             return self.Core.DB.POutput.PluginAlreadyRun(PluginInfo)
-
-        def GetExecLogSinceLastExecution(self, Plugin): # Get all execution entries from log since last time the passed plugin executed
-                return self.ExecutionRegistry[self.Core.Config.GetTarget()][self.GetLastPluginExecution(Plugin):]
 
         def NormalRequestsAllowed(self):
                 #AllowedPluginTypes = self.Core.Config.GetAllowedPluginTypes('web')
@@ -183,16 +151,37 @@ class PluginHandler:
                 f, Filename, desc = imp.find_module(ModuleFile.split('.')[0], [ModulePath]) #ModulePath = os.path.abspath(ModuleFile)
                 return imp.load_module(ModuleName, f, Filename, desc)
 
-        def IsChosenPlugin(self, Plugin):
-                Chosen = True
-                if Plugin['group'] == self.PluginGroup:
-                        if self.OnlyPluginsSet and Plugin['code'] not in self.OnlyPluginsList:
-                                Chosen = False # Skip plugins not present in the white-list defined by the user
-                        if self.ExceptPluginsSet and Plugin['code'] in self.ExceptPluginsList:
-                                Chosen = False # Skip plugins present in the black-list defined by the user
-                if Plugin['type'] not in self.Core.DB.Plugin.GetTypesForGroup(Plugin['group']):
-                        Chosen = False # Skip plugin: Not matching selected type
-                return Chosen
+        def is_plugin_chosen(self, plugin):
+            """Verify that the plugin has been chosen by the user.
+
+            :param dict plugin: The plugin dictionary with all the information.
+
+            :return: True if the plugin has been chosen, False otherwise.
+            :rtype: bool
+
+            """
+            chosen = True
+            reason = 'not-specified'
+            if plugin['group'] == self.PluginGroup:
+                # Skip plugins not present in the white-list defined by the user.
+                if self.OnlyPluginsSet and plugin['code'] not in self.OnlyPluginsList:
+                    chosen = False
+                    reason = 'not in white-list'
+                # Skip plugins present in the black-list defined by the user.
+                if self.ExceptPluginsSet and plugin['code'] in self.ExceptPluginsList:
+                    chosen = False
+                    reason = 'in black-list'
+            if plugin['type'] not in self.Core.DB.Plugin.GetTypesForGroup(plugin['group']):
+                chosen = False  # Skip plugin: Not matching selected type
+                reason = 'not matching selected type'
+            if not chosen:
+                logging.warning(
+                    'Plugin: %s (%s/%s) has not been chosen by the user (%s), skipping...',
+                    plugin['title'],
+                    plugin['group'],
+                    plugin['type'],
+                    reason)
+            return chosen
 
         def IsActiveTestingPossible(self): # Checks if 1 active plugin is enabled = active testing possible:
                 Possible = False
@@ -208,24 +197,18 @@ class PluginHandler:
             #return self.Core.Config.Get('FORCE_OVERWRITE')
             return False
 
-        def CanPluginRun(self, Plugin, ShowMessages = False):
-                #if self.Core.IsTargetUnreachable():
-                #        return False # Cannot run plugin if target is unreachable
-                if not self.IsChosenPlugin(Plugin):
-                        return False # Skip not chosen plugins
-                # Grep plugins to be always run and overwritten (they run once after semi_passive and then again after active):
-                #if self.PluginAlreadyRun(Plugin) and not self.Core.Config.Get('FORCE_OVERWRITE'): #not Code == 'OWASP-WU-SPID': # For external plugin forced re-run (development)
-                if self.PluginAlreadyRun(Plugin) and ((not self.force_overwrite() and not ('grep' == Plugin['type'])) or Plugin['type'] == 'external'): #not Code == 'OWASP-WU-SPID':
-                        if ShowMessages:
-                                logging.info("Plugin: "+Plugin['title']+" ("+Plugin['type']+") has already been run, skipping ..")
-                        #if Plugin['Type'] == 'external':
-                        # External plugins are run only once per each run, so they are registered for all targets
-                        # that are targets in that run. This is an alternative to chaning the js filters etc..
-                        #        self.register_plugin_for_all_targets(Plugin)
-                        return False
-                if 'grep' == Plugin['type'] and self.PluginAlreadyRun(Plugin):
-                        return False # Grep plugins can only run if some active or semi_passive plugin was run since the last time
-                return True
+        def can_plugin_run(self, Plugin):
+            """Verify that a plugin can be run by OWTF.
+
+            :param dict Plugin: The plugin dictionary with all the information.
+
+            :return: True if the plugin can be run, False otherwise.
+            :rtype: bool
+
+            """
+            if not self.is_plugin_chosen(Plugin):
+                return False # Skip not chosen plugins
+            return True
 
         def GetPluginFullPath(self, PluginDir, Plugin):
                 return PluginDir+"/"+Plugin['type']+"/"+Plugin['file'] # Path to run the plugin
@@ -289,6 +272,20 @@ class PluginHandler:
             return owtf_rank
 
         def ProcessPlugin(self, plugin_dir, plugin, status={}):
+            """Process a plugin from running to ranking.
+
+            :param str plugin_dir: Path to the plugin directory.
+            :param dict plugin: The plugin dictionary with all the information.
+            :param dict status: Running status of the plugin.
+
+            :return: The output generated by the plugin when run.
+            :return: None if the plugin was not run.
+            :rtype: list
+
+            """
+            # Ensure that the plugin CAN be run before starting anything.
+            if not self.plugin_can_run(plugin):
+                return None
             # Save how long it takes for the plugin to run.
             self.Core.Timer.start_timer('Plugin')
             plugin['start'] = self.Core.Timer.get_start_date_time('Plugin')
@@ -298,9 +295,8 @@ class PluginHandler:
                 self.Core.Config.GetOutputDirForTargets())
             status['AllSkipped'] = False  # A plugin is going to be run.
             plugin['status'] = 'Running'
-            self.PluginCount += 1
             logging.info(
-                '_' * 10 + ' ' + str(self.PluginCount) +
+                '_' * 10 + ' ' +
                 ' - Target: ' + self.Core.DB.Target.GetTargetURL() +
                 ' -> Plugin: ' + plugin['title'] + ' (' +
                 plugin['type'] + ') ' + '_' * 10)

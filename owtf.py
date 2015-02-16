@@ -307,25 +307,25 @@ def get_plugins_from_arg(core, arg):
     return [plugins, plugin_groups]
 
 def get_custom_profiles(user_args):
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-m", "--custom_profile",
-        dest="CustomProfile",
-        default=None,
-        help="<g:f,w:f,n:f,r:f,m:f> - Use my profile: 'f' = valid config file. " \
-             "g: general config, w: web plugin order, n: net plugin order, " \
-             "r: resources file, m: mappings file")
-    arg, unknown = parser.parse_known_args(user_args)
-    # Default settings:
     profiles = {}
-    if arg.CustomProfile:  # Custom profiles specified
-        # Quick pseudo-validation check
-        for profile in arg.CustomProfile.split(','):
-            chunks = profile.split(':')
-            if len(chunks) != 2 or not os.path.exists(chunks[1]):
-                usage("Invalid Profile")
-            else:  # profile "ok" :)
-                profiles[chunks[0]] = chunks[1]
+    if "-m" in sys.argv[1:] or "--custom_profile" in sys.argv[1:]:
+        parser = argparse.ArgumentParser()
+        parser.add_argument(
+            "-m", "--custom_profile",
+            dest="CustomProfile",
+            default=None,
+            help="<g:f,w:f,n:f,r:f,m:f> - Use my profile: 'f' = valid config file. " \
+                 "g: general config, w: web plugin order, n: net plugin order, " \
+                 "r: resources file, m: mappings file")
+        arg, unknown = parser.parse_known_args(user_args)
+        if arg.CustomProfile:  # Custom profiles specified
+            # Quick pseudo-validation check
+            for profile in arg.CustomProfile.split(','):
+                chunks = profile.split(':')
+                if len(chunks) != 2 or not os.path.exists(chunks[1]):
+                    usage("Invalid Profile")
+                else:  # profile "ok" :)
+                    profiles[chunks[0]] = chunks[1]
     return(profiles)
 
 
@@ -354,7 +354,6 @@ def process_options(core, user_args):
         arg.ExceptPlugins, plugin_groups = get_plugins_from_arg(
             core,
             arg.ExceptPlugins)
-        print("ExceptPlugins=" + str(arg.ExceptPlugins))
 
     if arg.TOR_mode:
         arg.TOR_mode = arg.TOR_mode.split(":")
