@@ -446,7 +446,13 @@ class Core(object):
         else:
             cprint("Unable to add github issue, but thanks for trying :D")
 
-    def Finish(self, status='Complete', report=True):
+    def finish(self):
+        """Finish OWTF framework after freeing resources.
+
+        :return: None
+        :rtype: None
+
+        """
         if getattr(self, "TOR_process", None) is not None:
             self.TOR_process.terminate()
         # TODO: Fix this for lions_2014
@@ -474,6 +480,8 @@ class Core(object):
                     self.TransactionLogger.join()
                 except:  # It means the proxy was not started.
                     pass
+            # Properly stop any db sessions
+            self.db.clean_up()
             # Stop any tornado loops
             tornado.ioloop.IOLoop.instance().stop()
             exit(0)

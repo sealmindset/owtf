@@ -56,10 +56,27 @@ class ErrorHandler(object):
     def SetCommand(self, command):
         self.Command = command
 
-    def FrameworkAbort(self, message, report=True):
-        message = "Aborted by Framework: " + message
-        cprint(message)
-        self.Core.Finish(message, report)
+    def FrameworkAbort(self, message):
+        """Abort the OWTF framework.
+
+        :warning: If it happens really early and :class:`framework.core.Core`
+            has note been instanciated yet, `sys.exit()` is called with error
+            code -1
+
+        :param str message: Descriptive message about the abort.
+
+        :return: full message explaining the abort.
+        :rtype: str
+
+        """
+        message = "Aborted by Framework: %s" % message
+        logging.error(message)
+        if self.Core is None:
+            # Core being None means that OWTF is aborting super early.
+            # Therefore, force a brutal exit and throw away the message.
+            sys.exit(-1)
+        else:
+            self.Core.finish()
         return message
 
     def get_option_from_user(self, options):
@@ -81,7 +98,7 @@ class ErrorHandler(object):
             if 'e' == option:
                 if 'Command' == level:  # Try to save partial plugin results.
                     raise FrameworkAbortException(partial_output)
-                    self.Core.Finish("Aborted by user")  # Interrupted.
+                    self.Core.finish()  # Interrupted.
             elif 'p' == option:  # Move on to next plugin.
                 # Jump to next handler and pass partial output to avoid losing
                 # results.

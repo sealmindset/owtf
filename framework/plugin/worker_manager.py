@@ -170,7 +170,7 @@ class WorkerManager(object):
             work_in_progress = work_in_progress or self.workers[k]["busy"]
         if (self.core.Config.QuitOnCompletion and not work_in_progress) and \
                 (self.core.DB.Worklist.get_total_work_count() == 0):
-            self.core.Finish()
+            self.core.finish()
 
     def poison_pill_to_workers(self):
         """

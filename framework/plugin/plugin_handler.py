@@ -368,7 +368,7 @@ class PluginHandler:
                 if status_msg == 'Aborted':
                     self.Core.Error.UserAbort('Plugin')
                 if abort_reason == 'Framework Aborted':
-                    self.Core.Finish('Aborted')
+                    self.Core.finish()
             return output
 
         def ProcessPlugins(self):

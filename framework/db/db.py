@@ -124,3 +124,7 @@ class DB(object):
         self.engine = self.CreateEngine(models.Base)
         session_factory = sessionmaker(bind=self.engine)
         return scoped_session(session_factory)
+
+    def clean_up(self):
+        if not getattr(self, "session", None):
+            self.session.close()

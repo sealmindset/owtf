@@ -78,9 +78,6 @@ class Config(object):
         for type in CONFIG_TYPES:
             self.Config[type] = {}
 
-    def Init(self):
-        self.HealthCheck = health_check.HealthCheck(self.Core)
-
     def LoadFrameworkConfigFromFile(self, config_path):
         """Load the configuration from into a global dictionary."""
         if 'framework_config' not in config_path:
@@ -311,36 +308,11 @@ class Config(object):
         if not self.Get('SIMULATION'):
             self.Core.CreateMissingDirs(self.Get('host_output'))
 
-        # URL Analysis DBs
-        # URL DBs: Distintion between vetted, confirmed-to-exist, in
-        # transaction DB URLs and potential URLs.
-        self.InitHTTPDBs(self.Get('url_output'))
-
-    def DeriveDBPathsFromURL(self, target_URL):
-        targets_folder = os.path.expanduser(self.Get('TARGETS_DB_FOLDER'))
-        url_info_id = target_URL.replace('/','_').replace(':','')
-        transaction_db_path = os.path.join(
-            targets_folder,
-            url_info_id,
-            "transactions.db")
-        url_db_path = os.path.join(targets_folder, url_info_id, "urls.db")
-        plugins_db_path = os.path.join(
-            targets_folder,
-            url_info_id,
-            "plugins.db")
-        return [transaction_db_path, url_db_path, plugins_db_path]
-
     def GetFileName(self, setting, partial=False):
         path = self.Get(setting)
         if partial:
             return os.path.basename(path)
         return path
-
-    def GetHTMLTransaclog(self, partial=False):
-        return self.GetFileName('TRANSACTION_LOG_HTML', partial)
-
-    def GetTXTTransaclog(self, partial=False):
-        return self.GetFileName('TRANSACTION_LOG_TXT', partial)
 
     def IsHostNameNOTIP(self, host_name, host_ip):
         return host_name != host_ip  # Host.
@@ -527,18 +499,3 @@ class Config(object):
 
     def CreateOutputDirForTarget(self, target_URL):
         self.Core.CreateMissingDirs(self.GetOutputDirForTarget(target_URL))
-
-    def GetTransactionDBPathForTarget(self, target_URL):
-        return os.path.join(
-            self.GetOutputDirForTarget(target_URL),
-            self.FrameworkConfigGet("TRANSACTION_DB_NAME"))
-
-    def GetUrlDBPathForTarget(self, target_URL):
-        return os.path.join(
-            self.GetOutputDirForTarget(target_URL),
-            self.FrameworkConfigGet("URL_DB_NAME"))
-
-    def GetOutputDBPathForTarget(self, target_URL):
-        return os.path.join(
-            self.GetOutputDirForTarget(target_URL),
-            self.FrameworkConfigGet("OUTPUT_DB_NAME"))
