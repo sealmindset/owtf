@@ -399,7 +399,7 @@ class Core(object):
         # No processing required, just list available modules.
         if options['ListPlugins']:
             self.PluginHandler.ShowPluginList()
-            self.exit_output()
+            self.finish()
             return False
         self.Config.ProcessOptions(options)
         command = self.GetCommand(options['argv'])
@@ -458,33 +458,24 @@ class Core(object):
         # TODO: Fix this for lions_2014
         # if self.DB.Config.Get('SIMULATION'):
         #    exit()
-        try:
-            self.KillChildProcesses(multiprocessing.current_process().pid)
-        except:
-            pass
-        try:
-            self.PluginHandler.CleanUp()
-        except AttributeError:  # DB not instantiated yet!
-            pass
-        finally:
-            if getattr(self, "ProxyMode", None) is not None:
-                try:
-                    cprint(
-                        "Stopping inbound proxy processes and "
-                        "cleaning up, Please wait!")
-                    self.KillChildProcesses(self.ProxyProcess.pid)
-                    self.ProxyProcess.terminate()
-                    # No signal is generated during closing process by
-                    # terminate()
-                    self.TransactionLogger.poison_q.put('done')
-                    self.TransactionLogger.join()
-                except:  # It means the proxy was not started.
-                    pass
-            # Properly stop any db sessions
-            self.db.clean_up()
-            # Stop any tornado loops
-            tornado.ioloop.IOLoop.instance().stop()
-            exit(0)
+        if getattr(self, "PluginHandler", None) is not None:
+            self.PluginHandler.clean_up()
+        if getattr(self, "ProxyProcess", None) is not None:
+            logging.info(
+                "Stopping inbound proxy processes and cleaning up. Please wait!")
+            self.KillChildProcesses(self.ProxyProcess.pid)
+            self.ProxyProcess.terminate()
+        if getattr(self, "TransactionLogger", None) is not None:
+            # No signal is generated during closing process by
+            # terminate()
+            self.TransactionLogger.poison_q.put('done')
+            self.TransactionLogger.join()
+        if getattr(self, "DB", None) is not None:
+            # Properly stop any DB instances.
+            self.DB.clean_up()
+        # Stop any tornado loops
+        tornado.ioloop.IOLoop.instance().stop()
+        exit(0)
 
     def IsIPInternal(self, IP):
         return len(self.IsIPInternalRegexp.findall(IP)) == 1
