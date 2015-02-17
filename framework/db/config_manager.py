@@ -72,7 +72,7 @@ class ConfigDB(object):
             if isinstance(criteria.get('dirty'), list):
                 criteria['dirty'] = criteria['dirty'][0]
             query = query.filter_by(dirty=self.Core.Config.ConvertStrToBool(criteria['dirty']))
-        return query
+        return(query.order_by(models.ConfigSetting.key))
 
     def GetAll(self, criteria=None):
         if not criteria:
