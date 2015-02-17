@@ -2,7 +2,7 @@ import os
 import imp
 import json
 from framework.db import models
-from sqlalchemy import or_
+from sqlalchemy import or_, not_
 
 
 TEST_GROUPS = ['web', 'net', 'aux']
@@ -210,8 +210,14 @@ class PluginDB(object):
                 query = query.filter(models.Plugin.name.in_(criteria["name"]))
         return query
 
-    def GetAll(self, Criteria={}):
-        query = self.GenerateQueryUsingSession(Criteria)
+    def GetAll(self, criteria=None, not_criteria=None):
+        query = self.GenerateQueryUsingSession(criteria)
+        for key, value in not_criteria.iteritems():
+            if getattr(models.Plugin, key, None):
+                if isinstance(value, (str, unicode)):
+                    query = query.filter(getattr(models.Plugin, key) != value)
+                if isinstance(value, list):
+                    query = query.filter(not_(getattr(models.Plugin, key).in_(value)))
         plugin_obj_list = query.all()
         return(self.DerivePluginDicts(plugin_obj_list))
 

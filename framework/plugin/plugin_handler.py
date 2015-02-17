@@ -201,19 +201,6 @@ class PluginHandler:
             #return self.Core.Config.Get('FORCE_OVERWRITE')
             return False
 
-        def can_plugin_run(self, Plugin):
-            """Verify that a plugin can be run by OWTF.
-
-            :param dict Plugin: The plugin dictionary with all the information.
-
-            :return: True if the plugin can be run, False otherwise.
-            :rtype: bool
-
-            """
-            if not self.is_plugin_chosen(Plugin):
-                return False # Skip not chosen plugins
-            return True
-
         def GetPluginFullPath(self, PluginDir, Plugin):
                 return PluginDir+"/"+Plugin['type']+"/"+Plugin['file'] # Path to run the plugin
 
@@ -287,9 +274,6 @@ class PluginHandler:
             :rtype: list
 
             """
-            # Ensure that the plugin CAN be run before starting anything.
-            if not self.plugin_can_run(plugin):
-                return None
             # Save how long it takes for the plugin to run.
             self.Core.Timer.start_timer('Plugin')
             plugin['start'] = self.Core.Timer.get_start_date_time('Plugin')

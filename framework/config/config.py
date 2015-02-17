@@ -117,30 +117,30 @@ class Config(object):
         self.cli_options = deepcopy(options)
         self.QuitOnCompletion = options["QuitOnCompletion"]
         target_urls = self.LoadTargets(options)
-        self.LoadWork(options, target_urls)
+        self.load_work(target_urls, options)
 
-    def LoadWork(self, options, target_urls):
+    def load_work(self, target_urls, options):
+        """Add plugins and target to worklist
+
+        :param list target_urls: target urls
+        :param dict options: options CLI
         """
-        Add plugins and targets to worklist
-        """
-        if len(target_urls) != 0:
-            targets = self.Core.DB.Target.GetTargetConfigs({
-                "target_url": target_urls})
-            if options["OnlyPlugins"] is None:
-                filter_data = {
-                    "type": options["PluginType"],
-                    "group": options["PluginGroup"],
-                }
-            else:
-                filter_data = {"code": options["OnlyPlugins"]}
-                if options.get("type", None):
-                    filter_data["type"] = options["type"]
-            plugins = self.Core.DB.Plugin.GetAll(filter_data)
-            force_overwrite = options["Force_Overwrite"]
-            self.Core.DB.Worklist.add_work(
-                targets,
-                plugins,
-                force_overwrite=force_overwrite)
+        targets = self.Core.DB.Target.GetTargetConfigs({"target_url": target_urls})
+        not_filter_data = {}
+        if options["OnlyPlugins"] is None:
+            filter_data = {'type': options['PluginType'], 'group': options["PluginGroup"]}
+            if options["ExceptPlugins"] is not None:
+                not_filter_data["code"] = options["ExceptPlugins"]
+        else:
+            filter_data = {"code": options["OnlyPlugins"]}
+            if options.get("PluginType", None):
+                filter_data["type"] = options["PluginType"]
+        plugins = self.Core.DB.Plugin.GetAll(criteria=filter_data, not_criteria=not_filter_data)
+        force_overwrite = options["Force_Overwrite"]
+        self.Core.DB.Worklist.add_work(
+            targets,
+            plugins,
+            force_overwrite=force_overwrite)
 
     def get_profile_path(self, profile_name):
         return(self.Profiles.get(profile_name, None))

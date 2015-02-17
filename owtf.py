@@ -249,18 +249,10 @@ def usage(error_message):
         "Run all plugins except 'OWASP-CM-001: Testing_for_SSL-TLS': " + main +
         " -e 'OWASP-CM-001' http://my.website.com"
         )
-    print(
-        "Run all plugins except 'OWASP-CM-001: Testing_for_SSL-TLS': " + main +
-        " -e 'Testing_for_SSL-TLS' http://my.website.com"
-        )
     print()
     print(
         "Run only 'OWASP-CM-001: Testing_for_SSL-TLS':             " + main +
         " -o 'OWASP-CM-001' http://my.website.com"
-        )
-    print(
-        "Run only 'OWASP-CM-001: Testing_for_SSL-TLS':             " + main +
-        " -o 'Testing_for_SSL-TLS' http://my.website.com"
         )
     print()
     print(
@@ -302,6 +294,13 @@ def validate_one_plugin_group(plugin_groups):
 
 def get_plugins_from_arg(core, arg):
     plugins = arg.split(',')
+    for plugin in plugins:
+        found = core.DB.Plugin.is_valid_plugin(code=plugin)
+        if not found:
+            core.Error.FrameworkAbort(
+                "The code '%s' is not a valid plugin, please "
+                "use the -l option to see available plugin "
+                "codes" % plugin)
     plugin_groups = core.DB.Plugin.GetGroupsForPlugins(plugins)
     validate_one_plugin_group(plugin_groups)
     return [plugins, plugin_groups]
@@ -345,10 +344,7 @@ def process_options(core, user_args):
             # Set Plugin Group according to plugin list specified
             plugin_group = plugin_groups[0]
         except IndexError:
-            usage("Please use either OWASP/OWTF codes or Plugin names")
-        cprint(
-            "Defaulting Plugin Group to '" +
-            plugin_group + "' based on list of plugins supplied")
+            usage("Please use either OWTF codes")
 
     if arg.ExceptPlugins:
         arg.ExceptPlugins, plugin_groups = get_plugins_from_arg(
