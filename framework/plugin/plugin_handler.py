@@ -94,24 +94,28 @@ class PluginHandler:
                 self.scanner = Scanner(self.Core)
                 self.showOutput = True
 
-        def ValidateAndFormatPluginList(self, PluginList):
-                List = [] # Ensure there is always a list to iterate from! :)
-                if PluginList != None:
-                        List = PluginList
+        def ValidateAndFormatPluginList(self, plugin_codes):
+            """Validate the plugin details by checking if they exist.
 
-                ValidatedList = []
-                #print "List to validate="+str(List)
-                for Item in List:
-                        Found = False
-                        for Plugin in self.Core.DB.Plugin.GetPluginsByGroup(self.PluginGroup): # Processing Loop
-                                if Item in [ Plugin['code'], Plugin['name'] ]:
-                                        ValidatedList.append(Plugin['code'])
-                                        Found = True
-                                        break
-                        if not Found:
-                                cprint("ERROR: The code '"+Item+"' is not a valid plugin, please use the -l option to see available plugin names and codes")
-                                exit()
-                return ValidatedList # Return list of Codes
+            :param list plugin_codes: OWTF plugin codes/names to be validated.
+
+            :return: validated plugin codes.
+            :rtype: list
+
+            """
+            plugin_codes = plugin_codes or [] # Ensure there is always a list to iterate from! :)
+            valid_plugin_codes = []
+            for code in plugin_codes:
+                found = False
+                if self.Core.DB.Plugin.is_valid_plugin(code=code):
+                    valid_plugin_codes.append(code)
+                    found = True
+                if not found:
+                    self.Core.Error.FrameworkAbort(
+                        "The code '%s' is not a valid plugin, please "
+                        "use the -l option to see available plugin "
+                        "codes" % code)
+            return valid_plugin_codes # Return list of Codes
 
         def PluginAlreadyRun(self, PluginInfo):
             return self.Core.DB.POutput.PluginAlreadyRun(PluginInfo)

@@ -229,3 +229,12 @@ class PluginDB(object):
         groups = self.Core.DB.session.query(models.Plugin.group).filter(or_(models.Plugin.code.in_(Plugins), models.Plugin.name.in_(Plugins))).distinct().all()
         groups = [i[0] for i in groups]
         return(groups)
+
+    def is_valid_plugin(self, code=None, name=None):
+        criteria = {}
+        if code is not None:
+            criteria["code"] = code
+        if name is not None:
+            criteria["name"] = name
+        query = self.GenerateQueryUsingSession(criteria)
+        return((query.count() > 0))
