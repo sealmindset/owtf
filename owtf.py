@@ -45,7 +45,6 @@ import argparse
 from framework import core
 from framework.lib.general import *
 from framework import update
-from framework.http.proxy import tor_manager # Is needed for printing configuration help
 
 
 def banner():
@@ -354,7 +353,8 @@ def process_options(core, user_args):
     if arg.TOR_mode:
         arg.TOR_mode = arg.TOR_mode.split(":")
         if(arg.TOR_mode[0] == "help"):
-            tor_manager.TOR_manager.msg_configure_tor()
+            from framework.http.proxy.tor_manager import TOR_manager
+            TOR_manager.msg_configure_tor()
             exit(0)
         if len(arg.TOR_mode) == 1:
             if arg.TOR_mode[0] != "help":
@@ -434,7 +434,7 @@ def process_options(core, user_args):
         pass
     elif num_targets == 1:  # Check if this is a file
         if os.path.isfile(scope[0]):
-            cprint("Scope file: trying to load targets from it ..")
+            logging.info("Scope file: trying to load targets from it ..")
             new_scope = []
             for target in open(scope[0]).read().split("\n"):
                 CleanTarget = target.strip()
@@ -486,8 +486,8 @@ def run_owtf(core, args):
             core.finish()  # Not Interrupted or Crashed.
     except KeyboardInterrupt:
         # NOTE: The user chose to interact: interactivity check redundant here:
-        cprint("\nowtf was aborted by the user:")
-        cprint("Please check report/plugin output files for partial results")
+        logging.warn("owtf was aborted by the user:")
+        logging.warn("Please check report/plugin output files for partial results")
         # Interrupted. Must save the DB to disk, finish report, etc.
         core.finish()
     except SystemExit:

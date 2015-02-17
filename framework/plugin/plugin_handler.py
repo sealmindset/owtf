@@ -32,20 +32,9 @@ chosen settings.
 """
 
 import os
-import sys
 import imp
-import time
-import json
-import fcntl
-import curses
-import select
-import signal
 import logging
-import termios
-import multiprocessing
 
-from threading import Thread
-from collections import defaultdict
 from ptp import PTP
 from ptp.libptp.exceptions import PTPError
 
@@ -81,16 +70,6 @@ class PluginHandler:
                 #self.AllowedPluginTypes = self.GetAllowedPluginTypes(Options['PluginType'].split(','))
                 #self.Simulation, self.Scope, self.PluginGroup, self.Algorithm, self.ListPlugins = [ Options['Simulation'], Options['Scope'], Options['PluginGroup'], Options['Algorithm'], Options['ListPlugins'] ]
                 self.Simulation, self.Scope, self.PluginGroup, self.ListPlugins = [ Options['Simulation'], Options['Scope'], Options['PluginGroup'], Options['ListPlugins'] ]
-                self.OnlyPluginsList = self.ValidateAndFormatPluginList(Options['OnlyPlugins'])
-                self.ExceptPluginsList = self.ValidateAndFormatPluginList(Options['ExceptPlugins'])
-                #print "OnlyPlugins="+str(self.OnlyPluginsList)
-                #print "ExceptPlugins="+str(self.ExceptPluginsList)
-                #print "Options['PluginType']="+str(Options['PluginType'])
-                if isinstance(Options['PluginType'], str): # For special plugin types like "quiet" -> "semi_passive" + "passive"
-                        Options['PluginType'] = Options['PluginType'].split(',')
-                self.AllowedPlugins = self.Core.DB.Plugin.GetPluginsByGroupType(self.PluginGroup, Options['PluginType'])
-                self.OnlyPluginsSet = len(self.OnlyPluginsList) > 0
-                self.ExceptPluginsSet = len(self.ExceptPluginsList) > 0
                 self.scanner = Scanner(self.Core)
                 self.showOutput = True
 
@@ -154,38 +133,6 @@ class PluginHandler:
         def GetModule(self, ModuleName, ModuleFile, ModulePath):# Python fiddling to load a module from a file, there is probably a better way...
                 f, Filename, desc = imp.find_module(ModuleFile.split('.')[0], [ModulePath]) #ModulePath = os.path.abspath(ModuleFile)
                 return imp.load_module(ModuleName, f, Filename, desc)
-
-        def is_plugin_chosen(self, plugin):
-            """Verify that the plugin has been chosen by the user.
-
-            :param dict plugin: The plugin dictionary with all the information.
-
-            :return: True if the plugin has been chosen, False otherwise.
-            :rtype: bool
-
-            """
-            chosen = True
-            reason = 'not-specified'
-            if plugin['group'] == self.PluginGroup:
-                # Skip plugins not present in the white-list defined by the user.
-                if self.OnlyPluginsSet and plugin['code'] not in self.OnlyPluginsList:
-                    chosen = False
-                    reason = 'not in white-list'
-                # Skip plugins present in the black-list defined by the user.
-                if self.ExceptPluginsSet and plugin['code'] in self.ExceptPluginsList:
-                    chosen = False
-                    reason = 'in black-list'
-            if plugin['type'] not in self.Core.DB.Plugin.GetTypesForGroup(plugin['group']):
-                chosen = False  # Skip plugin: Not matching selected type
-                reason = 'not matching selected type'
-            if not chosen:
-                logging.warning(
-                    'Plugin: %s (%s/%s) has not been chosen by the user (%s), skipping...',
-                    plugin['title'],
-                    plugin['group'],
-                    plugin['type'],
-                    reason)
-            return chosen
 
         def IsActiveTestingPossible(self): # Checks if 1 active plugin is enabled = active testing possible:
                 Possible = False

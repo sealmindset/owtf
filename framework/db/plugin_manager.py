@@ -222,10 +222,10 @@ class PluginDB(object):
         return(self.DerivePluginDicts(plugin_obj_list))
 
     def GetPluginsByType(self, PluginType):
-        return(self.GetAll({"plugin_type": PluginType}))
+        return(self.GetAll({"type": PluginType}))
 
     def GetPluginsByGroup(self, PluginGroup):
-        return(self.GetAll({"plugin_group": PluginGroup}))
+        return(self.GetAll({"group": PluginGroup}))
 
     def GetPluginsByGroupType(self, PluginGroup, PluginTypeList):
         plugins = self.Core.DB.session.query(models.Plugin).filter(models.Plugin.group == PluginGroup, models.Plugin.type.in_(PluginTypeList)).all()
