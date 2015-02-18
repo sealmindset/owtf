@@ -454,12 +454,14 @@ class Core(object):
 
         """
         if getattr(self, "TOR_process", None) is not None:
+            logging.info("Terminating tor process")
             self.TOR_process.terminate()
         # TODO: Fix this for lions_2014
         # if self.DB.Config.Get('SIMULATION'):
         #    exit()
         if getattr(self, "PluginHandler", None) is not None:
-            self.PluginHandler.clean_up()
+            logging.info("Launching clean up of worker manager")
+            self.WorkerManager.clean_up()
         if getattr(self, "ProxyProcess", None) is not None:
             logging.info(
                 "Stopping inbound proxy processes and cleaning up. Please wait!")
@@ -468,13 +470,22 @@ class Core(object):
         if getattr(self, "TransactionLogger", None) is not None:
             # No signal is generated during closing process by
             # terminate()
+            logging.info("Sending poison pill to transaction logger")
             self.TransactionLogger.poison_q.put('done')
             self.TransactionLogger.join()
         if getattr(self, "DB", None) is not None:
             # Properly stop any DB instances.
+            logging.info("Cleaning up DB session")
             self.DB.clean_up()
-        # Stop any tornado loops
-        tornado.ioloop.IOLoop.instance().stop()
+        if getattr(self, "FileServer", None) is not None:
+            logging.info(
+                "Stopping file server process and cleaning up. Please wait!")
+            self.KillChildProcesses(self.FileServer.pid)
+            self.FileServer.terminate()
+        if getattr(self, "InterfaceServer", None) is not None:
+            # Stop any tornado loops
+            logging.info("Stopping tornado loops in the current process, so interface server stops")
+            tornado.ioloop.IOLoop.instance().stop()
         exit(0)
 
     def IsIPInternal(self, IP):
