@@ -212,12 +212,13 @@ class PluginDB(object):
 
     def GetAll(self, criteria=None, not_criteria=None):
         query = self.GenerateQueryUsingSession(criteria)
-        for key, value in not_criteria.iteritems():
-            if getattr(models.Plugin, key, None):
-                if isinstance(value, (str, unicode)):
-                    query = query.filter(getattr(models.Plugin, key) != value)
-                if isinstance(value, list):
-                    query = query.filter(not_(getattr(models.Plugin, key).in_(value)))
+        if not_criteria is not None:
+            for key, value in not_criteria.iteritems():
+                if getattr(models.Plugin, key, None):
+                    if isinstance(value, (str, unicode)):
+                        query = query.filter(getattr(models.Plugin, key) != value)
+                    if isinstance(value, list):
+                        query = query.filter(not_(getattr(models.Plugin, key).in_(value)))
         plugin_obj_list = query.all()
         return(self.DerivePluginDicts(plugin_obj_list))
 

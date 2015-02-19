@@ -117,7 +117,8 @@ class Config(object):
         self.cli_options = deepcopy(options)
         self.QuitOnCompletion = options["QuitOnCompletion"]
         target_urls = self.LoadTargets(options)
-        self.load_work(target_urls, options)
+        if len(target_urls) > 0:
+            self.load_work(target_urls, options)
 
     def load_work(self, target_urls, options):
         """Add plugins and target to worklist
@@ -172,6 +173,7 @@ class Config(object):
                 added_targets.append(target)
             except DBIntegrityException:
                 logging.warning(target + " already exists in DB")
+                added_targets.append(target) # Add target even if it is in db
             except UnresolvableTargetException as e:
                 logging.error(e.parameter)
         return(added_targets)
