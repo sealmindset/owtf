@@ -396,6 +396,7 @@ class Core(object):
         logging.info("Loading framework please wait..")
         # self.initlogger()
 
+        self.initialise_plugin_handler_and_params(options)
         # No processing required, just list available modules.
         if options['list_plugins']:
             self.PluginHandler.show_plugin_list(options['list_plugins'])
@@ -408,7 +409,6 @@ class Core(object):
         self.StartProxy(options)  # Proxy mode is started in that function.
         # Set anonymised invoking command for error dump info.
         self.Error.SetCommand(self.AnonymiseCommand(command))
-        self.initialise_plugin_handler_and_params(options)
         return True
 
     def initialise_plugin_handler_and_params(self, options):

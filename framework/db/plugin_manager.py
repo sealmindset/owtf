@@ -210,7 +210,7 @@ class PluginDB(object):
                 query = query.filter(models.Plugin.name.in_(criteria["name"]))
         return query
 
-    def GetAll(self, criteria=None, not_criteria=None):
+    def GetAll(self, criteria={}, not_criteria=None):
         query = self.GenerateQueryUsingSession(criteria)
         if not_criteria is not None:
             for key, value in not_criteria.iteritems():
@@ -228,9 +228,8 @@ class PluginDB(object):
     def GetPluginsByGroup(self, PluginGroup):
         return(self.GetAll({"group": PluginGroup}))
 
-    def GetPluginsByGroupType(self, PluginGroup, PluginTypeList):
-        plugins = self.Core.DB.session.query(models.Plugin).filter(models.Plugin.group == PluginGroup, models.Plugin.type.in_(PluginTypeList)).all()
-        return(self.DerivePluginDicts(plugins))
+    def GetPluginsByGroupType(self, PluginGroup, PluginType):
+        return self.GetAll({"type": PluginType, "group": PluginGroup})
 
     def GetGroupsForPlugins(self, Plugins):
         groups = self.Core.DB.session.query(models.Plugin.group).filter(or_(models.Plugin.code.in_(Plugins), models.Plugin.name.in_(Plugins))).distinct().all()

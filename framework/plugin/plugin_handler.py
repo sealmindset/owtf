@@ -105,7 +105,7 @@ class PluginHandler:
     def NormalRequestsAllowed(self):
         #AllowedPluginTypes = self.Core.Config.GetAllowedPluginTypes('web')
         #GetAllowedPluginTypes('web')
-        AllowedPluginTypes = self.Core.Config.Plugin.GetAllowedTypes('web')
+        AllowedPluginTypes = self.Core.DB.Plugin.GetAllowedTypes('web')
         return 'semi_passive' in AllowedPluginTypes or 'active' in AllowedPluginTypes
 
     def RequestsPossible(self):
@@ -141,7 +141,7 @@ class PluginHandler:
         Possible = False
         #for PluginType, PluginFile, Title, Code, ReferenceURL in self.Core.Config.GetPlugins(): # Processing Loop
         #for PluginType, PluginFile, Title, Code in self.Core.Config.Plugin.GetOrder(self.PluginGroup):
-        for Plugin in self.Core.Config.Plugin.GetOrder(self.PluginGroup):
+        for Plugin in self.Core.DB.Plugin.GetOrder(self.PluginGroup):
             if self.IsChosenPlugin(Plugin) and Plugin['type'] == 'active':
                 Possible = True
                 break
@@ -328,10 +328,10 @@ class PluginHandler:
         self.Core.DB.Target.SetTarget(Target) # Tell Target DB that all Gets/Sets are now Target-specific
 
     def get_plugins_in_order_for_PluginGroup(self, PluginGroup):
-        return self.Core.Config.Plugin.GetOrder(PluginGroup)
+        return self.Core.DB.Plugin.GetOrder(PluginGroup)
 
     def get_plugins_in_order(self, PluginGroup):
-        return self.Core.Config.Plugin.GetOrder(PluginGroup)
+        return self.Core.DB.Plugin.GetOrder(PluginGroup)
 
     def ProcessPluginsForTargetList(self, PluginGroup, Status, TargetList): # TargetList param will be useful for netsec stuff to call this
         PluginDir = self.GetPluginGroupDir(PluginGroup)
@@ -402,12 +402,12 @@ class PluginHandler:
             logging.info(msg + "\nAvailable AUXILIARY plugins:")
         elif group == 'net':
             logging.info(msg + "\nAvailable NET plugins:")
-        for plugin_type in self.Core.Config.Plugin.GetTypesForGroup(group):
+        for plugin_type in self.Core.DB.Plugin.GetTypesForGroup(group):
             self.show_plugin_types(plugin_type, group)
 
     def show_plugin_types(self, plugin_type, group):
         logging.info("\n" + '*' * 40 + " " + plugin_type.title().replace('_', '-') + " plugins " + '*' * 40)
-        for Plugin in self.Core.Config.Plugin.GetAll(group, plugin_type):
+        for Plugin in self.Core.DB.Plugin.GetPluginsByGroupType(group, plugin_type):
             # 'Name' : PluginName, 'Code': PluginCode, 'File' : PluginFile, 'Descrip' : PluginDescrip } )
             LineStart = " " + Plugin['type'] + ": " + Plugin['name']
             Pad1 = "_" * (60 - len(LineStart))
