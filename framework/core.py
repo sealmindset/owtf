@@ -85,54 +85,43 @@ class Core(object):
           Init procedures can exist only if the component can do some
           initialisation only after addition of all components
         """
-        # ------------------------ IO decoration ------------------------ #
+        # --------------------- IO decoration -------------------------- #
         self.decorate_io()
-
-        # ------------------------ Error & Config ------------------------ #
+        # --------------------- Error & Config ------------------------- #
         self.Error = error_handler.ErrorHandler(self)
         self.Config = config.Config(root_dir, owtf_pid, profiles, self)
-
-        # ----------------------- Directory creation ----------------------- #
+        # --------------------- Directory creation --------------------- #
         self.create_dirs()
-        self.pnh_log_file()  # <-- This is not supposed to be here
-
-        # -------------------- Component attachment -------------------- #
-        # (Order is important, if there is a dependency on some other
-        # other component please mention in a comment)
-        # Shell might be needed in some places
+        self.pnh_log_file()  # <-- This is not supposed to be here.
+        # --------------------- Component attachment ------------------- #
+        # (Order is important, if there is a dependency on some other other component please mention in a comment).
+        # Shell might be needed in some places.
         self.Shell = blocking_shell.Shell(self)
-        # As soon as you have config create logger for MainProcess
+        # As soon as you have config create logger for MainProcess.
         self.enable_logging()
-        # Plugin Helper needs access to automate Plugin tasks
+        # Plugin Helper needs access to automate Plugin tasks.
         self.PluginHelper = plugin_helper.PluginHelper(self)
-        # Reporter needs access to Core to access Config, etc
+        # Reporter needs access to Core to access Config, etc.
         self.Reporter = reporter.Reporter(self)
         self.Selenium = selenium_handler.Selenium(self)
         self.InteractiveShell = interactive_shell.InteractiveShell(self)
         self.SET = set_handler.SETHandler(self)
         self.SMTP = smtp.SMTP(self)
         self.SMB = smb.SMB(self)
-        # DB needs Config for some settings
+        # DB needs Config for some settings.
         self.DB = db.DB(self)
-        self.DB.Init()  # Seperate Init because of self reference
-        # Timer requires DB
+        self.DB.Init()  # Seperate Init because of self reference.
+        # Timer requires DB.
         self.Timer = timer.Timer(self.DB.Config.Get('DATE_TIME_FORMAT'))
-        # Zest related components
+        # Zest related components.
         self.zest = zest.Zest(self)
         self.zap_api_handler = zap.ZAP_API(self)
-
-        # -------------------- Booleans and attributes -------------------- #
+        # --------------------- Booleans and attributes ---------------- #
         self.IsIPInternalRegexp = re.compile(
             "^127.\d{123}.\d{123}.\d{123}$|^10.\d{123}.\d{123}.\d{123}$|"
-            "^192.168.\d{123}$|^172.(1[6-9]|2[0-9]|3[0-1]).[0-9]{123}.[0-9]{123}$"
-        )
+            "^192.168.\d{123}$|^172.(1[6-9]|2[0-9]|3[0-1]).[0-9]{123}.[0-9]{123}$")
         self.TOR_process = None
-
-        # --------------------------- Init calls --------------------------- #
-        # Nothing as of now
-        self.health_check()
-
-    def health_check(self):
+        # --------------------- Init calls ----------------------------- #
         self.HealthCheck = health_check.HealthCheck(self)
 
     def create_dirs(self):
@@ -157,8 +146,7 @@ class Core(object):
     def clean_temp_storage_dirs(self):
         """Rename older temporary directory to avoid any further confusions."""
         curr_tmp_dir = os.path.join('/tmp', 'owtf', str(self.Config.OwtfPid))
-        new_tmp_dir = os.path.join(
-            '/tmp', 'owtf', 'old-%d' % self.Config.OwtfPid)
+        new_tmp_dir = os.path.join('/tmp', 'owtf', 'old-%d' % self.Config.OwtfPid)
         if os.path.exists(curr_tmp_dir) and os.access(curr_tmp_dir, os.W_OK):
             os.rename(curr_tmp_dir, new_tmp_dir)
 
@@ -192,7 +180,7 @@ class Core(object):
         self.mode = mode
         self.file_path = self.Config.FrameworkConfigGet('PNH_EVENTS_FILE')
 
-        if (os.path.isfile(self.file_path) and os.access(self.file_path, os.W_OK)):
+        if os.path.isfile(self.file_path) and os.access(self.file_path, os.W_OK):
             try:
                 with self.open(self.file_path, self.mode, owtf_clean=False) as log_file:
                     log_file.write(self.content)
@@ -234,9 +222,7 @@ class Core(object):
         if options['TOR_mode'] is not None:
             if options['TOR_mode'][0] != "help":
                 if tor_manager.TOR_manager.is_tor_running():
-                    self.TOR_process = tor_manager.TOR_manager(
-                        self,
-                        options['TOR_mode'])
+                    self.TOR_process = tor_manager.TOR_manager(self, options['TOR_mode'])
                     self.TOR_process = self.TOR_process.Run()
                 else:
                     tor_manager.TOR_manager.msg_start_tor(self)
@@ -255,53 +241,32 @@ class Core(object):
             if options['Botnet_mode'][0] == "miner":
                 miner = Proxy_Miner()
                 proxies = miner.start_miner()
-
             if options['Botnet_mode'][0] == "list":  # load proxies from list
-                proxies = self.Proxy_manager.load_proxy_list(
-                    options['Botnet_mode'][1]
-                )
-                answer = raw_input(
-                    "[#] Do you want to check the proxy list? [Yes/no] : "
-                )
-
+                proxies = self.Proxy_manager.load_proxy_list(options['Botnet_mode'][1])
+                answer = raw_input("[#] Do you want to check the proxy list? [Yes/no] : ")
             if answer.upper() in ["", "YES", "Y"]:
                 proxy_q = multiprocessing.Queue()
-                proxy_checker = multiprocessing.Process(
-                    target=Proxy_Checker.check_proxies,
-                    args=(proxy_q, proxies,)
-                )
+                proxy_checker = multiprocessing.Process(target=Proxy_Checker.check_proxies, args=(proxy_q, proxies,))
                 logging.info("Checking Proxies...")
                 start_time = time.time()
                 proxy_checker.start()
                 proxies = proxy_q.get()
                 proxy_checker.join()
-
             self.Proxy_manager.proxies = proxies
             self.Proxy_manager.number_of_proxies = len(proxies)
-
             if options['Botnet_mode'][0] == "miner":
                 logging.info("Writing proxies to disk(~/.owtf/proxy_miner/proxies.txt)")
                 miner.export_proxies_to_file("proxies.txt", proxies)
             if answer.upper() in ["", "YES", "Y"]:
                 logging.info(
                     "Proxy Check Time: %s",
-                    time.strftime(
-                        '%H:%M:%S',
-                        time.localtime(time.time() - start_time - 3600)
-                    )
-                )
+                    time.strftime('%H:%M:%S', time.localtime(time.time() - start_time - 3600)))
                 cprint("Done")
-
             if self.Proxy_manager.number_of_proxies is 0:
                 self.Error.FrameworkAbort("No Alive proxies.")
-
-
             proxy = self.Proxy_manager.get_next_available_proxy()
-
             # check proxy var... http:// sock://
-            options['OutboundProxy'] = []
-            options['OutboundProxy'].append(proxy["proxy"][0])
-            options['OutboundProxy'].append(proxy["proxy"][1])
+            options['OutboundProxy'] = [proxy["proxy"][0], proxy["proxy"][1]]
 
     def StartProxy(self, options):
         # The proxy along with supporting processes are started
@@ -319,17 +284,12 @@ class Core(object):
                     self.DB.Config.Get('INBOUND_PROXY_IP') + ":" +
                     self.DB.Config.Get("INBOUND_PROXY_PORT") +
                     " already in use")
-
             # If everything is fine.
             self.ProxyProcess = proxy.ProxyProcess(self)
-            self.ProxyProcess.initialize(
-                options['OutboundProxy'],
-                options['OutboundProxyAuth']
-            )
+            self.ProxyProcess.initialize(options['OutboundProxy'], options['OutboundProxyAuth'])
             self.TransactionLogger = transaction_logger.TransactionLogger(
                 self,
-                cache_dir=self.DB.Config.Get('INBOUND_PROXY_CACHE_DIR')
-            )
+                cache_dir=self.DB.Config.Get('INBOUND_PROXY_CACHE_DIR'))
             logging.warn(
                 "%s:%s <-- HTTP(S) Proxy to which requests can be directed",
                 self.DB.Config.Get('INBOUND_PROXY_IP'),
@@ -340,15 +300,10 @@ class Core(object):
             self.Requester = requester.Requester(
                 self, [
                     self.DB.Config.Get('INBOUND_PROXY_IP'),
-                    self.DB.Config.Get('INBOUND_PROXY_PORT')]
-                )
-            logging.debug(
-                "Proxy transaction's log file at %s",
-                self.DB.Config.Get("PROXY_LOG"))
+                    self.DB.Config.Get('INBOUND_PROXY_PORT')])
+            logging.debug("Proxy transaction's log file at %s", self.DB.Config.Get("PROXY_LOG"))
         else:
-            self.Requester = requester.Requester(
-                self,
-                options['OutboundProxy'])
+            self.Requester = requester.Requester(self, options['OutboundProxy'])
 
     def enable_logging(self, **kwargs):
         """
@@ -357,16 +312,10 @@ class Core(object):
           overriding the root logger
         + Enables both file and console logging
         """
-        process_name = kwargs.get(
-            "process_name",
-            multiprocessing.current_process().name
-        )
+        process_name = kwargs.get("process_name", multiprocessing.current_process().name)
         logger = logging.getLogger()
         logger.setLevel(logging.DEBUG)
-        file_handler = self.FileHandler(
-            self.Config.FrameworkConfigGetLogPath(process_name),
-            mode="w+"
-        )
+        file_handler = self.FileHandler(self.Config.FrameworkConfigGetLogPath(process_name), mode="w+")
         file_handler.setLevel(logging.DEBUG)
         file_handler.setFormatter(FileFormatter())
 
@@ -418,9 +367,7 @@ class Core(object):
         self.WorkerManager = worker_manager.WorkerManager(self)
 
     def run_server(self):
-        """
-        This method starts the interface server
-        """
+        """This method starts the interface server."""
         self.FileServer = server.FileServer(self)
         self.FileServer.start()
         self.InterfaceServer = server.InterfaceServer(self)
@@ -433,13 +380,9 @@ class Core(object):
         self.InterfaceServer.start()
 
     def ReportErrorsToGithub(self):
-        cprint(
-            "Do you want to add any extra info to the bug report? "
-            "[Just press Enter to skip]")
+        cprint("Do you want to add any extra info to the bug report? [Press Enter to skip]")
         info = raw_input("> ")
-        cprint(
-            "Do you want to add your GitHub username to the report? "
-            "[Press Enter to skip]")
+        cprint("Do you want to add your GitHub username to the report? [Press Enter to skip]")
         user = raw_input("Reported by @")
         if self.Error.AddGithubIssue(Info=info, User=user):
             cprint("Github issue added, Thanks for reporting!!")
@@ -463,8 +406,7 @@ class Core(object):
             logging.info("Launching clean up of worker manager")
             self.WorkerManager.clean_up()
         if getattr(self, "ProxyProcess", None) is not None:
-            logging.info(
-                "Stopping inbound proxy processes and cleaning up. Please wait!")
+            logging.info("Stopping inbound proxy processes and cleaning up. Please wait!")
             self.KillChildProcesses(self.ProxyProcess.pid)
             self.ProxyProcess.terminate()
         if getattr(self, "TransactionLogger", None) is not None:
@@ -478,8 +420,7 @@ class Core(object):
             logging.info("Cleaning up DB session")
             self.DB.clean_up()
         if getattr(self, "FileServer", None) is not None:
-            logging.info(
-                "Stopping file server process and cleaning up. Please wait!")
+            logging.info("Stopping file server process and cleaning up. Please wait!")
             self.KillChildProcesses(self.FileServer.pid)
             self.FileServer.terminate()
         if getattr(self, "InterfaceServer", None) is not None:
@@ -524,12 +465,9 @@ class Core(object):
                     return func(*args, **kwargs)
                 except (OSError, IOError) as e:
                     if owtf_clean:
-                        self.Error.FrameworkAbort(
-                            "Error when calling '%s'! %s." %
-                            (func.__name__, str(e)))
+                        self.Error.FrameworkAbort("Error when calling '%s'! %s." % (func.__name__, str(e)))
                     raise e
             return io_error
-
         # Decorated functions
         self.open = catch_error(open)
         self.codecs_open = catch_error(codecs.open)

@@ -80,17 +80,14 @@ class ErrorHandler(object):
         return message
 
     def get_option_from_user(self, options):
-        return raw_input(
-            "Options: 'e'+Enter= Exit" + options + ", Enter= Next test\n")
+        return raw_input("Options: 'e'+Enter= Exit" + options + ", Enter= Next test\n")
 
     def UserAbort(self, level, partial_output = ''):
         # Levels so far can be Command or Plugin
         message = logging.info(
             "\nThe " + level + " was aborted by the user: Please check the "
             "report and plugin output files")
-        message = (
-            "\nThe " + level + " was aborted by the user: Please check the "
-            "report and plugin output files")
+        message = ("\nThe " + level + " was aborted by the user: Please check the " "report and plugin output files")
         options = ""
         if 'Command' == level:
             options = ", 'p'+Enter= Move on to next plugin"
@@ -98,7 +95,7 @@ class ErrorHandler(object):
             if 'e' == option:
                 if 'Command' == level:  # Try to save partial plugin results.
                     raise FrameworkAbortException(partial_output)
-                    self.Core.finish()  # Interrupted.
+                self.Core.finish()  # Interrupted.
             elif 'p' == option:  # Move on to next plugin.
                 # Jump to next handler and pass partial output to avoid losing
                 # results.
@@ -114,8 +111,7 @@ class ErrorHandler(object):
     def AddOWTFBug(self, message):
         # TODO: http://blog.tplus1.com/index.php/2007/09/28/the-python-logging-module-is-much-better-than-print-statements/
         exc_type, exc_value, exc_traceback = sys.exc_info()
-        err_trace_list = traceback.format_exception(
-            exc_type, exc_value, exc_traceback)
+        err_trace_list = traceback.format_exception(exc_type, exc_value, exc_traceback)
         err_trace = self.Core.AnonymiseCommand("\n".join(err_trace_list))
         message = self.Core.AnonymiseCommand(message)
         output = self.Padding + "OWTF BUG: Please report the sanitised " \
@@ -146,8 +142,7 @@ class ErrorHandler(object):
                 break
         data = {'title':'[Auto-Generated] ' + title, 'body':''}
         # For github markdown.
-        data['body'] = '#### OWTF Bug Report\n\n```' + \
-                       '\n'.join(error_data) + '```\n'
+        data['body'] = '#### OWTF Bug Report\n\n```\n'.join(error_data) + '```\n'
         if info:
             data['body'] += "\n#### User Report\n\n"
             data['body'] += info
@@ -157,12 +152,8 @@ class ErrorHandler(object):
         headers = {
             "Content-Type": "application/json",
             "Authorization":
-                "token " + self.Core.Config.Get("GITHUB_BUG_REPORTER_TOKEN")
-            }
-        request = urllib2.Request(
-            self.Core.Config.Get("GITHUB_API_ISSUES_URL"),
-            headers=headers,
-            data=data)
+                "token " + self.Core.Config.Get("GITHUB_BUG_REPORTER_TOKEN")}
+        request = urllib2.Request(self.Core.Config.Get("GITHUB_API_ISSUES_URL"), headers=headers, data=data)
         response = urllib2.urlopen(request)
         decoded_resp = json.loads(response.read())
         if response.code == 201:

@@ -99,11 +99,7 @@ class Updater(object):
         """Returns the last commit hash in the local repo."""
         command = ("git --git-dir=%s log -n 1 "%(self.git_dir))
         command += "--pretty=format:%H"
-        process = execute(
-            command,
-            shell=True,
-            env=self.process_environ,
-            stdout=PIPE, stderr=PIPE)
+        process = execute(command, shell=True, env=self.process_environ, stdout=PIPE, stderr=PIPE)
         stdout, stderr = process.communicate()
         commit_hash = stdout.strip()
         return commit_hash
@@ -113,12 +109,8 @@ class Updater(object):
             # Instead of checking tag names, commit hashes is checked for
             # foolproof method.
             if self.last_commit_hash() != self.remote_tags[0]["commit"]["sha"]:
-                cprint(
-                    "Trying to update OWTF to %s" %
-                    self.remote_tags[0]["name"])
-                command = (
-                    "git pull; git reset --soft %s" %
-                    self.remote_tags[0]["name"])
+                cprint("Trying to update OWTF to %s" % self.remote_tags[0]["name"])
+                command = ("git pull; git reset --soft %s" % self.remote_tags[0]["name"])
                 process = execute(
                     command,
                     shell=True,
@@ -127,16 +119,11 @@ class Updater(object):
                 stdout, stderr = process.communicate()
                 success = not process.returncode
                 if success:
-                    cprint(
-                        "OWTF Successfully Updated to Latest Stable Version!!")
+                    cprint("OWTF Successfully Updated to Latest Stable Version!!")
                     cprint("Version Tag: %s" % self.remote_tags[0]["name"])
-                    cprint(
-                        "Please run install script if you face any errors "
-                        "after updating")
+                    cprint("Please run install script if you face any errors after updating")
                 else:
                     cprint("Unable to update :(")
             else:
-                cprint(
-                    "Seems like you are running latest version => %s" %
-                    self.remote_tags[0]["name"])
+                cprint("Seems like you are running latest version => %s" % self.remote_tags[0]["name"])
                 cprint("Happy pwning!! :D")
