@@ -338,7 +338,7 @@ class Core(object):
 
     def Start(self, options):
         if self.initialise_framework(options):
-            return self.run_server()
+            return self.run_server(disable_console_logging=not options["QuitOnCompletion"])
 
     def initialise_framework(self, options):
         self.ProxyMode = options["ProxyMode"]
@@ -366,7 +366,7 @@ class Core(object):
         self.PluginParams = plugin_params.PluginParams(self, options)
         self.WorkerManager = worker_manager.WorkerManager(self)
 
-    def run_server(self):
+    def run_server(self, disable_console_logging=True):
         """This method starts the interface server."""
         self.FileServer = server.FileServer(self)
         self.FileServer.start()
@@ -375,8 +375,8 @@ class Core(object):
             "http://%s:%s <-- Web UI URL",
             self.Config.FrameworkConfigGet("SERVER_ADDR"),
             self.Config.FrameworkConfigGet("UI_SERVER_PORT"))
-        self.disable_console_logging()
-        logging.info("Press Ctrl+C when you spawned a shell ;)")
+        if disable_console_logging:
+            self.disable_console_logging()
         self.InterfaceServer.start()
 
     def ReportErrorsToGithub(self):
