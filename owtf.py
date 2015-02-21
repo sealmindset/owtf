@@ -288,9 +288,7 @@ def usage(error_message):
 
 def validate_one_plugin_group(plugin_groups):
     if len(plugin_groups) > 1:
-        usage(
-            "The plugins specified belong to several Plugin Groups: '" +
-            str(plugin_groups) + "'")
+        usage("The plugins specified belong to several Plugin Groups: '%s'" % str(plugin_groups))
 
 
 def get_plugins_from_arg(core, arg):
@@ -338,9 +336,7 @@ def process_options(core, user_args):
     plugin_group = arg.PluginGroup
 
     if arg.OnlyPlugins:
-        arg.OnlyPlugins, plugin_groups = get_plugins_from_arg(
-            core,
-            arg.OnlyPlugins)
+        arg.OnlyPlugins, plugin_groups = get_plugins_from_arg(core, arg.OnlyPlugins)
         try:
             # Set Plugin Group according to plugin list specified
             plugin_group = plugin_groups[0]
@@ -348,13 +344,11 @@ def process_options(core, user_args):
             usage("Please use either OWTF codes")
 
     if arg.ExceptPlugins:
-        arg.ExceptPlugins, plugin_groups = get_plugins_from_arg(
-            core,
-            arg.ExceptPlugins)
+        arg.ExceptPlugins, plugin_groups = get_plugins_from_arg(core, arg.ExceptPlugins)
 
     if arg.TOR_mode:
         arg.TOR_mode = arg.TOR_mode.split(":")
-        if(arg.TOR_mode[0] == "help"):
+        if arg.TOR_mode[0] == "help":
             from framework.http.proxy.tor_manager import TOR_manager
             TOR_manager.msg_configure_tor()
             exit(0)
@@ -364,33 +358,31 @@ def process_options(core, user_args):
         elif len(arg.TOR_mode) != 5:
             usage("Invalid argument for TOR-mode")
         else:
-            #Enables OutboundProxy
+            # Enables OutboundProxy
             if arg.TOR_mode[0] == '':
-                outbound_proxy_ip = "127.0.0.1"
+                outbound_proxy_ip = '127.0.0.1'
             else:
                 outbound_proxy_ip = arg.TOR_mode[0]
             if arg.TOR_mode[1] == '':
-                outbound_proxy_port = "9050" #default TOR port
+                outbound_proxy_port = '9050'  # Default TOR port.
             else:
                 outbound_proxy_port = arg.TOR_mode[1]
-            arg.OutboundProxy = "socks://" + outbound_proxy_ip + \
-                                ":" + outbound_proxy_port
+            arg.OutboundProxy = 'socks://%s:%s' % (outbound_proxy_ip, outbound_proxy_port)
 
     if arg.Botnet_mode:  # Checking arguments
         arg.Botnet_mode = arg.Botnet_mode.split(":")
         if arg.Botnet_mode[0] == "miner" and len(arg.Botnet_mode) != 1:
-            usage("Invalid argument for Botnet mode\n Mode must be miner or list")
+            usage("Invalid argument for Botnet mode\nMode must be miner or list")
         if arg.Botnet_mode[0] == "list":
             if len(arg.Botnet_mode) != 2:
-                usage("Invalid argument for Botnet mode\n Mode must be miner or list")
+                usage("Invalid argument for Botnet mode\nMode must be miner or list")
             if not os.path.isfile(os.path.expanduser(arg.Botnet_mode[1])):
                 usage("Error Proxy List not found! Please check the path.")
 
     if arg.OutboundProxy:
         arg.OutboundProxy = arg.OutboundProxy.split('://')
         if len(arg.OutboundProxy) == 2:
-            arg.OutboundProxy = arg.OutboundProxy + \
-                                arg.OutboundProxy.pop().split(':')
+            arg.OutboundProxy = arg.OutboundProxy + arg.OutboundProxy.pop().split(':')
             if arg.OutboundProxy[0] not in ["socks", "http"]:
                 usage("Invalid argument for Outbound Proxy")
         else:
@@ -525,9 +517,7 @@ def main(args):
         # If outbound proxy is set, those values are added to updater.
         if arg.OutboundProxy:
             if arg.OutboundProxyAuth:
-                updater.set_proxy(
-                    arg.OutboundProxy,
-                    proxy_auth=arg.OutboundProxyAuth)
+                updater.set_proxy(arg.OutboundProxy, proxy_auth=arg.OutboundProxyAuth)
             else:
                 updater.set_proxy(arg.OutboundProxy)
         # Update method called to perform update.
