@@ -59,7 +59,6 @@ class Config(object):
     def __init__(self, root_dir, owtf_pid, profiles, core):
         self.RootDir = root_dir
         self.OwtfPid = owtf_pid
-        self.QuitOnCompletion = False
         self.Core = core
         self.initialize_attributes()
         # key can consist alphabets, numbers, hyphen & underscore.
@@ -115,7 +114,6 @@ class Config(object):
         """
         # Backup the raw CLI options in case they are needed later.
         self.cli_options = deepcopy(options)
-        self.QuitOnCompletion = options["QuitOnCompletion"]
         target_urls = self.LoadTargets(options)
         if len(target_urls) > 0:
             self.load_work(target_urls, options)

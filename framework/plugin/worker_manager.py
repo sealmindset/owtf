@@ -126,7 +126,6 @@ class WorkerManager(object):
         if there is one
         """
         # Loop while there is some work in worklist
-        work_in_progress = False
         for k in range(0, len(self.workers)):
             if (not self.workers[k]["worker"].output_q.empty()) or (not self.workers[k]["worker"].is_alive()):
                 if self.workers[k]["worker"].is_alive():
@@ -152,11 +151,6 @@ class WorkerManager(object):
                     if not self.is_any_worker_busy():
                         logging.info("All jobs have been done. Exiting.")
                         self.core.finish()
-            work_in_progress = work_in_progress or self.workers[k]["busy"]
-        if (self.core.Config.QuitOnCompletion and not work_in_progress) and \
-                (self.core.DB.Worklist.get_total_work_count() == 0):
-            logging.info("All jobs have been done. Exiting.")
-            self.core.finish()
 
     def is_any_worker_busy(self):
         """If a worker is still busy, return True. Return False otherwise."""
