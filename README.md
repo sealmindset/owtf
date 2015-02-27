@@ -1,5 +1,3 @@
-[![Code Health](https://landscape.io/github/owtf/owtf/lions_2014/landscape.png)](https://landscape.io/github/owtf/owtf/lions_2014)
-
 Intro
 ===
 
