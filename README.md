@@ -1,5 +1,7 @@
 <img src="https://www.owasp.org/images/7/73/OWTFLogo.png" height="150" width="120" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![](https://www.owasp.org/images/5/59/Project_Type_Files_TOOL.jpg)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;![](https://www.owasp.org/images/d/dd/Mature_projects.png)
 
+[![DepShield Badge](https://depshield.sonatype.org/badges/sealmindset/owtf/depshield.svg)](https://depshield.github.io)
+
 **OWASP OWTF** is a project focused on penetration testing efficiency and alignment of security tests to security standards like the OWASP Testing Guide (v3 and v4), the OWASP Top 10, PTES and NIST so that pentesters will have more time to
 
 - See the big picture and think out of the box
